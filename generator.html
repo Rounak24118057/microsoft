@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediGuard — Prompt Injection Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1e2430;
+    --border2: #2a3040;
+    --accent: #00e5ff;
+    --accent2: #ff3d71;
+    --accent3: #a259ff;
+    --warn: #ffaa00;
+    --success: #00e096;
+    --text: #e8ecf0;
+    --text2: #8892a0;
+    --text3: #4a5568;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* scan line */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -100%;
+    left: 0; right: 0;
+    height: 200px;
+    background: linear-gradient(transparent, rgba(0,229,255,0.015), transparent);
+    animation: scan 8s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes scan {
+    0% { top: -200px; }
+    100% { top: 100vh; }
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,12,15,0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #00e5ff22, #00e5ff44);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  .logo-icon::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 9px;
+    box-shadow: 0 0 12px rgba(0,229,255,0.3);
+  }
+
+  .logo-text {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(255,61,113,0.1);
+    border: 1px solid rgba(255,61,113,0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Main layout ── */
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 40px 60px;
+  }
+
+  /* ── Hero section ── */
+  .hero {
+    margin-bottom: 40px;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+
+  .hero h1 .hi { color: var(--accent); }
+  .hero h1 .h2 { color: var(--accent2); }
+
+  .hero-desc {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 560px;
+    font-family: var(--mono);
+  }
+
+  /* ── Controls card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.4;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Controls grid */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .ctrl-group { display: flex; flex-direction: column; gap: 8px; }
+
+  .ctrl-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  select, input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  select:focus, input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  }
+
+  select option { background: var(--surface2); }
+
+  /* Category checkboxes */
+  .cats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .cat-check {
+    position: relative;
+  }
+
+  .cat-check input { display: none; }
+
+  .cat-check label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .cat-check input:checked + label {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.06);
+    box-shadow: 0 0 10px rgba(0,229,255,0.1);
+  }
+
+  .cat-pip {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+  }
+
+  .cat-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+  }
+
+  .cat-check input:checked + label .cat-name { color: var(--accent); }
+
+  /* Generate button */
+  .gen-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,229,255,0.08));
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    color: var(--accent);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gen-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .gen-btn:hover::before { opacity: 1; }
+  .gen-btn:hover { box-shadow: 0 0 20px rgba(0,229,255,0.2); transform: translateY(-1px); }
+  .gen-btn:active { transform: translateY(0); }
+  .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Progress */
+  .progress-wrap {
+    margin-top: 16px;
+    display: none;
+  }
+
+  .progress-wrap.visible { display: block; }
+
+  .progress-bar-bg {
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Output section ── */
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .output-stats {
+    display: flex;
+    gap: 20px;
+  }
+
+  .stat-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+  }
+
+  .stat-chip strong { color: var(--text); }
+
+  .action-btns {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+    border: none;
+  }
+
+  .btn-download {
+    background: rgba(0,224,150,0.12);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+
+  .btn-download:hover { background: rgba(0,224,150,0.2); box-shadow: 0 0 10px rgba(0,224,150,0.15); }
+
+  .btn-clear {
+    background: rgba(255,61,113,0.1);
+    border: 1px solid rgba(255,61,113,0.4);
+    color: var(--accent2);
+  }
+
+  .btn-clear:hover { background: rgba(255,61,113,0.18); }
+  .btn-sm:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Prompt list */
+  .prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 460px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .prompt-list::-webkit-scrollbar { width: 3px; }
+  .prompt-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .prompt-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    animation: slideIn 0.25s ease-out both;
+    transition: border-color 0.2s;
+  }
+
+  .prompt-item:hover { border-color: var(--border2); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .prompt-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    min-width: 24px;
+    padding-top: 2px;
+  }
+
+  .prompt-cat-dot {
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .prompt-text {
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.55;
+    font-family: var(--mono);
+    flex: 1;
+  }
+
+  .prompt-cat-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+
+  .empty-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  .empty-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  /* Save status */
+  .save-status {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 10px 16px;
+    border-radius: 7px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .save-status.success {
+    display: block;
+    background: rgba(0,224,150,0.08);
+    border: 1px solid rgba(0,224,150,0.3);
+    color: var(--success);
+  }
+
+  .save-status.error {
+    display: block;
+    background: rgba(255,61,113,0.08);
+    border: 1px solid rgba(255,61,113,0.3);
+    color: var(--accent2);
+  }
+
+  /* API key input */
+  .api-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .api-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: var(--accent); }
+  .api-input::placeholder { color: var(--text3); }
+
+  .api-save-btn {
+    padding: 10px 20px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.4);
+    border-radius: 7px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .api-save-btn:hover { background: rgba(0,229,255,0.18); }
+
+  .key-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-top: -12px;
+    margin-bottom: 16px;
+  }
+
+  .key-status.ok { color: var(--success); }
+  .key-status.bad { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.25C17.25 23.15 21 18.25 21 13V7L12 2z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Medi<span>Guard</span></div>
+      <div class="logo-sub">Prompt Injection Generator</div>
+    </div>
+  </div>
+  <div class="header-badge">TRAINING DATA TOOL</div>
+</header>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-tag">Dataset Generator v1.0</div>
+    <h1>Generate <span class="hi">Threat</span><br>Training <span class="h2">Prompts</span></h1>
+    <p class="hero-desc">Automatically generate healthcare prompt injection datasets using AI. Configure categories, count, and style — then download as JSON to train MediGuard's firewall.</p>
+  </div>
+
+  <!-- Config Card -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+
+    <!-- Controls -->
+    <div class="controls-grid">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Prompts to Generate</div>
+        <input type="number" id="promptCount" value="20" min="5" max="100">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Threat Intensity</div>
+        <select id="intensity">
+          <option value="subtle">Subtle (hard to detect)</option>
+          <option value="moderate" selected>Moderate (realistic)</option>
+          <option value="overt">Overt (clearly dangerous)</option>
+          <option value="mixed">Mixed (all types)</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Output Format</div>
+        <select id="outputFormat">
+          <option value="prompts_only">Prompts only</option>
+          <option value="with_labels" selected>With category labels</option>
+          <option value="full">Full (with reason + flags)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category selector -->
+    <div class="card-title">Threat Categories to Include</div>
+    <div class="cats-grid">
+      <div class="cat-check">
+        <input type="checkbox" id="cat0" checked>
+        <label for="cat0">
+          <span class="cat-pip" style="background:#e02424"></span>
+          <span class="cat-name">Unverified Drug Advice</span>
+        </label>
+      </div>
+      <div class="cat-check">
+        <input type="checkbox" id="cat1" checked>
+        <label for="cat1">
+          <span class="cat-pip" style="background:#d97706"></span>
+          <span class="cat-name">Alt-Source Dosage</span>
+        </label>
+      </div>
+      <div class="cat-check">
+        <input type="checkbox" id="cat2" checked>
+        <label for="cat2">
+          <span class="cat-pip" style="background:#7e3af2"></span>
+          <span class="cat-name">Misinformation Risk</span>
+        </label>
+      </div>
+      <div class="cat-check">
+        <input type="checkbox" id="cat3" checked>
+        <label for="cat3">
+          <span class="cat-pip" style="background:#0e9f6e"></span>
+          <span class="cat-name">Alternative Medicine</span>
+        </label>
+      </div>
+      <div class="cat-check">
+        <input type="checkbox" id="cat4" checked>
+        <label for="cat4">
+          <span class="cat-pip" style="background:#1a56db"></span>
+          <span class="cat-name">Unsafe Self-Treatment</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Generate button -->
+    <button class="gen-btn" id="genBtn" onclick="generate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      Generate Threat Prompts
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-text">
+        <span id="progressLabel">Generating...</span>
+        <span id="progressPct">0%</span>
+      </div>
+    </div>
+
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+
+  <!-- Output Card -->
+  <div class="card">
+    <div class="output-header">
+      <div class="card-title" style="margin-bottom:0; flex:1">Generated Prompts</div>
+      <div class="output-stats">
+        <div class="stat-chip">Total: <strong id="statTotal">0</strong></div>
+        <div class="stat-chip">Blocked: <strong id="statBlocked" style="color:var(--accent2)">0</strong></div>
+      </div>
+      <div class="action-btns" style="margin-left:16px;">
+        <button class="btn-sm btn-download" id="dlBtn" onclick="downloadJSON()" disabled>↓ Download JSON</button>
+        <button class="btn-sm btn-clear" id="clearBtn" onclick="clearAll()" disabled>✕ Clear</button>
+      </div>
+    </div>
+
+    <div class="prompt-list" id="promptList">
+      <div class="empty-state">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-text">No prompts generated yet.<br>Configure settings and click Generate.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────
+let allPrompts = [];
+
+const CAT_COLORS = ['#e02424','#d97706','#7e3af2','#0e9f6e','#1a56db'];
+const CAT_NAMES  = ['UNVERIFIED_DRUG_ADVICE','ALT_SOURCE_DOSAGE','MISINFORMATION_RISK','ALTERNATIVE_MEDICINE','UNSAFE_SELF_TREATMENT'];
+const CAT_LABELS = ['Unverified Drug Advice','Alt-Source Dosage','Misinformation Risk','Alternative Medicine','Unsafe Self-Treatment'];
+
+// ─── Progress ─────────────────────────────────────────────
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = Math.round(pct) + '%';
+  document.getElementById('progressLabel').textContent = label;
+  document.getElementById('progressWrap').classList.toggle('visible', pct < 100);
+}
+
+// ─── Generate — calls backend, NOT Groq directly ──────────
+async function generate() {
+  const count     = parseInt(document.getElementById('promptCount').value) || 20;
+  const intensity = document.getElementById('intensity').value;
+  const format    = document.getElementById('outputFormat').value;
+
+  const categories = [];
+  for (let i = 0; i < 5; i++) {
+    if (document.getElementById('cat' + i).checked) categories.push(i);
+  }
+
+  if (categories.length === 0) { alert('Please select at least one threat category.'); return; }
+
+  document.getElementById('genBtn').disabled    = true;
+  document.getElementById('dlBtn').disabled     = true;
+  document.getElementById('clearBtn').disabled  = true;
+  document.getElementById('promptList').innerHTML = '';
+  setProgress(10, 'Sending to backend...');
+  allPrompts = [];
+
+  try {
+    setProgress(30, 'Generating with Groq AI...');
+
+    // ── Single call to backend — backend calls Groq and saves file ──
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ count, intensity, format, categories })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+
+    setProgress(80, 'Rendering prompts...');
+
+    // Render all prompts
+    const prompts = data.dataset?.prompts || [];
+    for (const item of prompts) {
+      if (!item.prompt) continue;
+      allPrompts.push(item);
+      renderPrompt(item, allPrompts.length);
+    }
+
+    updateStats();
+    setProgress(100, `✓ Saved as ${data.filename}`);
+    setTimeout(() => document.getElementById('progressWrap').classList.remove('visible'), 2000);
+
+    // Show where it was saved
+    const savedPaths = (data.saved_to || []).join('\n  ');
+    showSaveStatus(`✓ Saved as: ${data.filename}\n  ${savedPaths}`, true);
+
+    document.getElementById('dlBtn').disabled   = false;
+    document.getElementById('clearBtn').disabled = false;
+
+  } catch (err) {
+    setProgress(100, 'Error');
+    document.getElementById('progressWrap').classList.remove('visible');
+    showSaveStatus('❌ Error: ' + err.message, false);
+  }
+
+  document.getElementById('genBtn').disabled = false;
+}
+
+// ─── Render ───────────────────────────────────────────────
+function renderPrompt(item, index) {
+  const list = document.getElementById('promptList');
+  const catIdx = Math.min(item.category ?? 0, 4);
+  const color  = CAT_COLORS[catIdx];
+  const label  = CAT_LABELS[catIdx];
+
+  const div = document.createElement('div');
+  div.className = 'prompt-item';
+  div.style.animationDelay = (index % 10 * 0.04) + 's';
+  div.innerHTML = `
+    <span class="prompt-num">${String(index).padStart(2,'0')}</span>
+    <span class="prompt-cat-dot" style="background:${color}"></span>
+    <span class="prompt-text">${escHtml(item.prompt)}</span>
+    <span class="prompt-cat-tag" style="background:${color}22;color:${color};border:1px solid ${color}44">${label}</span>
+  `;
+  list.appendChild(div);
+}
+
+function escHtml(t) {
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent   = allPrompts.length;
+  document.getElementById('statBlocked').textContent = allPrompts.length;
+}
+
+// ─── Download ─────────────────────────────────────────────
+function downloadJSON() {
+  if (!allPrompts.length) return;
+
+  const payload = {
+    category: 'Healthcare_Medical',
+    generated_at: new Date().toISOString(),
+    count: allPrompts.length,
+    prompts: allPrompts
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `mediguard_threats_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showSaveStatus(msg, ok) {
+  const el = document.getElementById('saveStatus');
+  el.textContent = msg;
+  el.className = 'save-status ' + (ok ? 'success' : 'error');
+}
+
+function clearAll() {
+  allPrompts = [];
+  document.getElementById('promptList').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-text">No prompts generated yet.<br>Configure settings and click Generate.</div>
+    </div>`;
+  document.getElementById('statTotal').textContent   = '0';
+  document.getElementById('statBlocked').textContent = '0';
+  document.getElementById('dlBtn').disabled   = true;
+  document.getElementById('clearBtn').disabled = true;
+  document.getElementById('saveStatus').className = 'save-status';
+}
+
+</script>
+</body>
+</html>
